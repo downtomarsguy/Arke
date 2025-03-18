@@ -17,16 +17,31 @@ impl EventHandler for Handler {
         if let Interaction::Command(command) = interaction {
             println!("Received command interaction: {command:#?}");
 
-            let content = match command.data.name.as_str() {
-                "ping" => Some(commands::ping::run(&command.data.options())),
-                _ => Some("Command not implemented :(".to_string()),
-            };
-
-            if let Some(content) = content {
-                let data = CreateInteractionResponseMessage::new().content(content);
-                let builder = CreateInteractionResponse::Message(data);
-                if let Err(why) = command.create_response(&ctx.http, builder).await {
-                    println!("Cannot respond to slash command: {why}");
+            match command.data.name.as_str() {
+                "ping" => {
+                    let content = commands::ping::run(&command.data.options());
+                    let data = CreateInteractionResponseMessage::new().content(content);
+                    let builder = CreateInteractionResponse::Message(data);
+                    if let Err(why) = command.create_response(&ctx.http, builder).await {
+                        println!("Cannot respond to slash command: {why}");
+                    }
+                }
+                "ping_vc" => {
+                    commands::ping_vc::run(&ctx, &command.data.options()).await;
+                    let data =
+                        CreateInteractionResponseMessage::new().content("Pinging da VC Role...");
+                    let builder = CreateInteractionResponse::Message(data);
+                    if let Err(why) = command.create_response(&ctx.http, builder).await {
+                        println!("Cannot respond to slash command: {why}");
+                    }
+                }
+                _ => {
+                    let data = CreateInteractionResponseMessage::new()
+                        .content("Command not implemented :(".to_string());
+                    let builder = CreateInteractionResponse::Message(data);
+                    if let Err(why) = command.create_response(&ctx.http, builder).await {
+                        println!("Cannot respond to slash command: {why}");
+                    }
                 }
             }
         }
@@ -43,7 +58,10 @@ impl EventHandler for Handler {
         );
 
         let commands = guild_id
-            .set_commands(&ctx.http, vec![commands::ping::register()])
+            .set_commands(
+                &ctx.http,
+                vec![commands::ping::register(), commands::ping_vc::register()],
+            )
             .await;
 
         println!("Registered guild slash commands: {commands:#?}");
