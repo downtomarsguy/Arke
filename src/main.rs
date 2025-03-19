@@ -5,7 +5,7 @@ use serenity::async_trait;
 use serenity::builder::{CreateInteractionResponse, CreateInteractionResponseMessage};
 use serenity::model::application::{Command, Interaction};
 use serenity::model::gateway::Ready;
-use serenity::model::id::GuildId;
+use serenity::model::id::{GuildId, UserId};
 use serenity::prelude::*;
 use std::env;
 
@@ -17,6 +17,9 @@ impl EventHandler for Handler {
         if let Interaction::Command(command) = interaction {
             println!("Received command interaction: {command:#?}");
 
+            let guild_id = command.guild_id.unwrap();
+            let user_id = command.user.id;
+
             match command.data.name.as_str() {
                 "ping" => {
                     let content = commands::ping::run(&command.data.options());
@@ -27,7 +30,7 @@ impl EventHandler for Handler {
                     }
                 }
                 "ping_vc" => {
-                    commands::ping_vc::run(&ctx, &command.data.options()).await;
+                    commands::ping_vc::run(&ctx, &command.data.options(), user_id, guild_id).await;
                     let data =
                         CreateInteractionResponseMessage::new().content("Pinging da VC Role...");
                     let builder = CreateInteractionResponse::Message(data);
